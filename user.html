@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>User Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Segoe UI",sans-serif}
+body{
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  min-height:100vh;
+  color:#333;
+}
+/* HEADER */
+.header{
+  backdrop-filter:blur(10px);
+  background:rgba(255,255,255,0.1);
+  color:white;
+  padding:15px 25px;
+  display:flex;
+  align-items:center;
+  box-shadow:0 4px 20px rgba(0,0,0,0.15);
+}
+.menu-btn{font-size:26px;cursor:pointer;margin-right:15px}
+.header h2{font-weight:600}
+/* LOGOUT BUTTON */
+.logout-btn{
+  margin-left:auto;
+  background:#ef4444;
+  border:none;
+  padding:8px 14px;
+  border-radius:6px;
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+}
+.logout-btn:hover{background:#dc2626}
+/* SIDEBAR */
+.sidebar{
+  position:fixed;
+  top:0;left:-260px;
+  width:260px;height:100vh;
+  background:#1e293b;
+  color:white;
+  padding-top:70px;
+  transition:.4s;
+  z-index:10;
+}
+.sidebar.active{left:0}
+.sidebar a{
+  display:block;
+  padding:14px 22px;
+  color:#cbd5e1;
+  text-decoration:none;
+  transition:.2s;
+  cursor:pointer;
+}
+.sidebar a:hover{
+  background:#334155;
+  padding-left:28px;
+  color:white;
+}
+/* OVERLAY */
+.overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.4);
+  display:none;z-index:5;
+}
+.overlay.active{display:block}
+/* MAIN CONTENT */
+.main{padding:30px;}
+.page{display:none}
+.page.active{display:block}
+/* GLASS CARD */
+.card{
+  backdrop-filter:blur(14px);
+  background:rgba(255,255,255,0.85);
+  border-radius:18px;
+  padding:25px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.15);
+  margin-bottom:30px;
+}
+.card h3{margin-bottom:20px;color:#4c51bf;}
+/* COLLECTION GRID */
+.collections{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:20px;
+}
+.book-box{
+  background:white;
+  border-radius:14px;
+  padding:15px;
+  text-align:center;
+  transition:.3s;
+  box-shadow:0 8px 20px rgba(0,0,0,0.08);
+}
+.book-box:hover{
+  transform:translateY(-6px);
+  box-shadow:0 15px 30px rgba(0,0,0,0.15);
+}
+.book-box img{
+  width:90px;height:120px;object-fit:cover;margin-bottom:10px;border-radius:6px;
+}
+.book-box div{font-weight:600;font-size:14px}
+/* TABLE */
+table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden}
+th{background:#667eea;color:white;padding:12px}
+td{padding:12px;background:white}
+tr:nth-child(even) td{background:#f8fafc}
+.empty{color:#777}
+/* FORM */
+input{
+  padding:12px;width:60%;border-radius:8px;border:1px solid #ddd;margin-right:10px;
+}
+button{
+  padding:12px 20px;border:none;border-radius:8px;
+  background:#667eea;color:white;font-weight:600;cursor:pointer;transition:.3s;
+}
+button:hover{background:#5a67d8}
+.msg{margin-top:15px;font-weight:600}
+.success{color:green}
+.error{color:red}
+.fine{color:#b91c1c;font-weight:bold}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <span class="menu-btn" onclick="toggleSidebar()">☰</span>
+  <h2>⭐ User Panel</h2>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <a onclick="openPage('collections')">📚 Collections</a>
+  <a onclick="openPage('available')">📖 Available Books</a>
+  <a onclick="openPage('issue')">📥 Issue Book</a>
+  <a onclick="openPage('returned')">📦 Returned Books</a>
+  <a onclick="openPage('issued')">📚 Issued Books</a>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="main">
+<div id="collections" class="page active">
+  <div class="card">
+    <h3>✨ Popular Collections</h3>
+    <div class="collections">
+      <div class="book-box"><img src="https://covers.openlibrary.org/b/id/10521258-L.jpg"><div>Harry Potter</div></div>
+      <div class="book-box"><img src="https://covers.openlibrary.org/b/id/11153261-L.jpg"><div>The Alchemist</div></div>
+      <div class="book-box"><img src="https://covers.openlibrary.org/b/id/10594755-L.jpg"><div>Rich Dad Poor Dad</div></div>
+      <div class="book-box"><img src="https://covers.openlibrary.org/b/id/8231856-L.jpg"><div>Atomic Habits</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="available" class="page">
+  <div class="card">
+    <h3>📖 Available Books</h3>
+    <table id="booksTable"></table>
+  </div>
+</div>
+
+<div id="issue" class="page">
+  <div class="card">
+    <h3>📥 Issue a Book</h3>
+    <input id="searchBook" placeholder="Search by book name...">
+    <button onclick="issueBook()">Issue Book</button>
+    <div id="issueMsg" class="msg"></div>
+  </div>
+</div>
+
+<div id="issued" class="page">
+  <div class="card">
+    <h3>📚 My Issued Books</h3>
+    <table id="issuedTable"></table>
+  </div>
+</div>
+
+<div id="returned" class="page">
+  <div class="card">
+    <h3>📦 Returned Books</h3>
+    <table id="returnedTable"></table>
+  </div>
+</div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  async function checkLogin(){
+    try{
+      const res = await fetch("/api/me");
+      const data = await res.json();
+      if(!data.loggedIn){
+        window.location.href = "index.html";
+      }
+    }catch{
+      window.location.href = "index.html";
+    }
+  }
+
+  checkLogin();
+
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("overlay");
+  const booksTable = document.getElementById("booksTable");
+  const returnedTable = document.getElementById("returnedTable");
+  const searchBook = document.getElementById("searchBook");
+  const issueMsg = document.getElementById("issueMsg");
+
+  window.toggleSidebar = function(){
+    sidebar.classList.toggle("active");
+    overlay.classList.toggle("active");
+  }
+
+  // ✅ FIXED openPage
+  window.openPage = function(id){
+    document.querySelectorAll(".page").forEach(p=>{
+      p.classList.remove("active");
+    });
+
+    document.getElementById(id).classList.add("active");
+    toggleSidebar();
+
+    if(id === "issued"){
+      loadIssuedBooks();
+    }
+
+    if(id === "returned"){
+      loadReturned();
+    }
+  }
+
+  window.logout = async function(){
+    await fetch("/api/logout",{method:"POST"});
+    window.location.href="index.html";
+  }
+
+  async function loadBooks(){
+    const res=await fetch("/api/books");
+    const data=await res.json();
+
+    let html=`<tr><th>Name</th><th>Author</th><th>Qty</th></tr>`;
+
+    if(!data.length)
+      html+=`<tr><td colspan="3">No books available</td></tr>`;
+
+    data.forEach(b=>{
+      html+=`<tr>
+              <td>${b.name}</td>
+              <td>${b.author}</td>
+              <td>${b.qty}</td>
+            </tr>`;
+    });
+
+    booksTable.innerHTML=html;
+  }
+
+  window.issueBook = async function(){
+    const name = searchBook.value.trim();
+    if(!name) return;
+
+    const res = await fetch("/api/issue-book",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ bookName: name })
+    });
+
+    const data = await res.json();
+
+    if(res.ok){
+      issueMsg.textContent = "📥 Request sent for admin approval";
+      issueMsg.className = "msg success";
+      searchBook.value = "";
+      loadBooks();
+    }else{
+      issueMsg.textContent = data.message || "Book not available";
+      issueMsg.className = "msg error";
+    }
+  }
+
+  // ✅ LOAD ISSUED BOOKS
+  async function loadIssuedBooks(){
+    const res = await fetch("/api/my-issued");
+    const data = await res.json();
+
+    let html = `
+      <tr>
+        <th>Book Name</th>
+        <th>Issue Date</th>
+        <th>Action</th>
+      </tr>
+    `;
+
+    if(!data.length){
+      html += `<tr><td colspan="3">No issued books</td></tr>`;
+    }
+
+    data.forEach(book=>{
+      html += `
+        <tr>
+          <td>${book.book_name}</td>
+          <td>${book.issue_date}</td>
+          <td>
+            <button onclick="returnBook(${book.issue_id}, this)">Return</button>
+          </td>
+        </tr>
+      `;
+    });
+
+    document.getElementById("issuedTable").innerHTML = html;
+  }
+
+  // ✅ RETURN BOOK
+window.returnBook = async function(issueId, btn){
+
+  btn.disabled = true;   // prevent double click
+
+  const res = await fetch("/api/return-book/" + issueId, {
+    method: "POST"
+  });
+
+  if(res.ok){
+
+    // Smooth remove effect
+    const row = btn.closest("tr");
+    row.style.transition = "opacity 0.3s ease";
+    row.style.opacity = "0";
+
+    setTimeout(() => {
+      row.remove();
+
+      // If no rows left, show message
+      const table = document.getElementById("issuedTable");
+      if(table.querySelectorAll("tr").length === 1){
+        table.innerHTML += `<tr><td colspan="3">No issued books</td></tr>`;
+      }
+
+    }, 300);
+
+    loadReturned();
+    loadBooks();
+
+  } else {
+    btn.disabled = false;
+    alert("Failed to return book");
+  }
+}
+
+
+  // ✅ LOAD RETURNED
+  async function loadReturned(){
+    const res = await fetch("/api/my-returns");
+    const data = await res.json();
+
+    let html = `
+      <tr>
+        <th>Book</th>
+        <th>Issue Date</th>
+        <th>Return Date</th>
+      </tr>
+    `;
+
+    if(!data.length){
+      html += `<tr><td colspan="3">No returned books</td></tr>`;
+    }
+
+    data.forEach(r=>{
+      html += `
+        <tr>
+          <td>${r.book_name}</td>
+          <td>${r.issue_date}</td>
+          <td>${r.return_date}</td>
+        </tr>
+      `;
+    });
+
+    returnedTable.innerHTML = html;
+  }
+
+  // Initial Loads
+  loadBooks();
+});
+</script>
+
+
